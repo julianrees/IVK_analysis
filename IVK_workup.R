@@ -27,6 +27,10 @@ for(i in seq(1:nrow(conc))){
 
 act <- matrix(nrow = nrow(template), ncol = max(template$num.wells))
 for(i in seq(1:nrow(act))){
+
+#hola
+act <- matrix(nrow = 8, ncol = 8)
+for(i in seq(1:nrow(template))){
   act[i,1] = template$High.Activity[i]
   for(j in seq(1:(template$num.wells[i]-1))+1){
     act[i,j] <- act[i,j-1] / template$Serial.Factor[i]
@@ -42,7 +46,7 @@ mtemp <- cbind(mtemp, melt(t(act))[,3])
 mtemp <- mtemp[, -(idCols+1)]
 
 
-#--- Get the STD data from the template import, rename cols --- 
+#--- Get the STD data from the template import, rename cols ---
 mtemp <- cbind(mtemp, melt(t(template[,21:28]))[,3])
 colnames(mtemp) <- c(colnames(mtemp)[1:12], 'Viability', 'Concentration', 'Activity', 'STD')
 
@@ -60,30 +64,17 @@ theme_set(theme_bw())
 theme_update(plot.title = element_text(hjust = 0.5))
 
 
-ggplot(mtemp, aes(x = Concentration, y = Viability, by = ExpNum)) + 
-  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), color="black", width=.1) + 
-  geom_point() + 
-  scale_x_log10() + 
-  facet_wrap(~ExpNum) + 
+ggplot(mtemp, aes(x = Concentration, y = Viability, by = ExpNum)) +
+  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), color="black", width=.1) +
+  geom_point() +
+  scale_x_log10() +
+  facet_wrap(~ExpNum) +
   labs(x = "Concentration (nM)", y = "% Viability")
-  
 
-ggplot(mtemp, aes(x = Activity, y = Viability, by = ExpNum)) + 
-  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), color="black", width=.1) + 
-  geom_point() + 
-  scale_x_log10() + 
-  facet_wrap(~ExpNum) + 
+
+ggplot(mtemp, aes(x = Activity, y = Viability, by = ExpNum)) +
+  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), color="black", width=.1) +
+  geom_point() +
+  scale_x_log10() +
+  facet_wrap(~ExpNum) +
   labs(x = "Concentration (nM)", y = "% Viability")
-  
-
-
-
-
-
-
-
-
-
-
-
-
