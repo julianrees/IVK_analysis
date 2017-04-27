@@ -17,32 +17,32 @@ idCols <- 12
 
 
 #--- Extrapolate concentration and activity data from initial values and serial dilution factor ---
-conc <- matrix(nrow = 8, ncol = 8)
-for(i in seq(1:nrow(template))){
+conc <- matrix(nrow = nrow(template), ncol = max(template$num.wells)) ######
+for(i in seq(1:nrow(conc))){
   conc[i,1] = template$High.Concentration[i]
-  for(j in seq(1:7)+1){
+  for(j in seq(1:(template$num.wells[i]-1))+1){
     conc[i,j] <- conc[i,j-1] / template$Serial.Factor[i]
   }
 }
 
-act <- matrix(nrow = 8, ncol = 8)
-for(i in seq(1:nrow(template))){
+act <- matrix(nrow = nrow(template), ncol = max(template$num.wells))
+for(i in seq(1:nrow(act))){
   act[i,1] = template$High.Activity[i]
-  for(j in seq(1:7)+1){
+  for(j in seq(1:(template$num.wells[i]-1))+1){
     act[i,j] <- act[i,j-1] / template$Serial.Factor[i]
   }
 }
 
 
 #--- Melt the data to pairs, add concentration and activity, cleanup ---
-mtemp <- melt(template[,1:20], id = colnames(template)[1:idCols])
+mtemp <- melt(template[,1:(idCols + nrow(conc))], id = colnames(template)[1:idCols])
 mtemp <- mtemp[with(mtemp, order(ExpNum)), ]
 mtemp <- cbind(mtemp, melt(t(conc))[,3])
 mtemp <- cbind(mtemp, melt(t(act))[,3])
 mtemp <- mtemp[, -(idCols+1)]
 
 
-#--- Get the STD data from the template import, rename cols ---
+#--- Get the STD data from the template import, rename cols --- 
 mtemp <- cbind(mtemp, melt(t(template[,21:28]))[,3])
 colnames(mtemp) <- c(colnames(mtemp)[1:12], 'Viability', 'Concentration', 'Activity', 'STD')
 
