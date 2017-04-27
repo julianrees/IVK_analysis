@@ -19,7 +19,7 @@ for(i in seq(1:nrow(template))){
     conc[i,j] <- conc[i,j-1] / template$Serial.Factor[i]
   }
 }
-
+#hola
 act <- matrix(nrow = 8, ncol = 8)
 for(i in seq(1:nrow(template))){
   act[i,1] = template$High.Activity[i]
