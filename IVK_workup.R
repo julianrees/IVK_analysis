@@ -2,7 +2,8 @@ library(ggplot2)
 library(reshape2)
 library(xlsx)
 library(plyr)
-
+library(drc)
+library(drfit)
 
 #--- Data import and conversion to numeric ---
 template <- read.xlsx("template2.xlsx", header = TRUE, sheetIndex = 1)
@@ -17,7 +18,7 @@ idCols <- 12
 
 
 #--- Extrapolate concentration and activity data from initial values and serial dilution factor ---
-conc <- matrix(nrow = nrow(template), ncol = max(template$num.wells)) ######
+conc <- matrix(nrow = nrow(template), ncol = max(template$num.wells))
 for(i in seq(1:nrow(conc))){
   conc[i,1] = template$High.Concentration[i]
   for(j in seq(1:(template$num.wells[i]-1))+1){
@@ -26,11 +27,9 @@ for(i in seq(1:nrow(conc))){
 }
 
 act <- matrix(nrow = nrow(template), ncol = max(template$num.wells))
+#for(i in seq(1:nrow(act))){
+#act <- matrix(nrow = 8, ncol = 8)
 for(i in seq(1:nrow(act))){
-
-#hola
-act <- matrix(nrow = 8, ncol = 8)
-for(i in seq(1:nrow(template))){
   act[i,1] = template$High.Activity[i]
   for(j in seq(1:(template$num.wells[i]-1))+1){
     act[i,j] <- act[i,j-1] / template$Serial.Factor[i]
@@ -54,6 +53,17 @@ colnames(mtemp) <- c(colnames(mtemp)[1:12], 'Viability', 'Concentration', 'Activ
 #--- Convert data and errors to percentages ---
 mtemp$Viability <- mtemp$Viability * 100
 mtemp$STD <- mtemp$STD * 100
+
+#--- CURVE FITTING ---
+params <- matrix(nrow = nrow(template), ncol = 4)
+for(i in seq(nrow(template))){
+  rr <- drm(Viability~Concentration, 
+            data = mtemp[ which(mtemp$ExpNum == i), ], 
+            fct = LL.4())
+  params[i, ] <- c(rr$fit$par[1], rr$fit$par[2], rr$fit$par[3], rr$fit$par[4])
+}  
+
+
 
 
 #---------- END OF DATA MANIPULATION !-!-! PLOTTING STARTS ----------------
