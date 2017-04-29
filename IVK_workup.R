@@ -27,8 +27,6 @@ for(i in seq(1:nrow(conc))){
 }
 
 act <- matrix(nrow = nrow(template), ncol = max(template$num.wells))
-#for(i in seq(1:nrow(act))){
-#act <- matrix(nrow = 8, ncol = 8)
 for(i in seq(1:nrow(act))){
   act[i,1] = template$High.Activity[i]
   for(j in seq(1:(template$num.wells[i]-1))+1){
@@ -55,7 +53,8 @@ mtemp$Viability <- mtemp$Viability * 100
 mtemp$STD <- mtemp$STD * 100
 
 #---- CURVE FITTING  ----
-fits <- data.frame(ExpNum = 1, Concentration = 1, y = 1)
+curvelength = 500
+fits <- data.frame(ExpNum = 1, Concentration = 1, Viability = 1)
 params <- matrix(nrow = nrow(template), ncol = 4)
 drfun <- function(x, b, c, d, e) c + (d - c) / (1 + exp(b*(log(x) - log(e))))
 for(i in seq(nrow(template))){
@@ -65,11 +64,11 @@ for(i in seq(nrow(template))){
   params[i, ] <- c(rr$fit$par[1], rr$fit$par[2], rr$fit$par[3], rr$fit$par[4])
   vals <- with(mtemp, seq(min(mtemp$Concentration[ which(mtemp$ExpNum == i)]), 
                           max(mtemp$Concentration[ which(mtemp$ExpNum == i)]), 
-                          length = 500))
+                          length = curvelength))
   addfits <- ddply(mtemp[ which(mtemp$ExpNum == i), ], "ExpNum", function(drfun) {
     data.frame(
       Concentration = vals, 
-      y = drfun(vals, params[i, 1], 
+      Viability = drfun(vals, params[i, 1], 
                 params[i, 2], 
                 params[i, 3], 
                 params[i, 4])
@@ -78,6 +77,13 @@ for(i in seq(nrow(template))){
   fits <- rbind(fits, addfits)
 }  
 fits <- fits[-1, ]
+fitvars <- template[, 1:idCols]
+fitvars <- cbind(fitvars, matrix(nrow = nrow(template), ncol = curvelength))
+mfitvars <- melt(fitvars, id = colnames(template)[1:idCols])
+#mtemp <- mtemp[with(mtemp, order(ExpNum)), ]
+
+
+fits <- cbind(fits[with(fits, order(ExpNum)), ], mfitvars[with(mfitvars, order(ExpNum)), 2:idCols])
 
 
 #---------- END OF DATA MANIPULATION !-!-! PLOTTING STARTS ----------------
@@ -88,12 +94,15 @@ theme_set(theme_bw())
 theme_update(plot.title = element_text(hjust = 0.5))
 
 
-ggplot(mtemp, aes(x = Concentration, y = Viability, by = ExpNum)) +
-  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), color="black", width=.1) +
+ggplot(mtemp, aes(x = Concentration, 
+                  y = Viability, 
+                  group = ExpNum, 
+                  color = Construct)) +
+  geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
   geom_point() +
-  geom_line(aes(y = y), data = fits, color = "red") +
+  geom_line(data = fits) +
+  facet_wrap(~ Antibody) +
   scale_x_log10() +
-  facet_wrap(~ ExpNum) +
   labs(x = "Concentration (nM)", y = "% Viability")
 
 
