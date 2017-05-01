@@ -49,8 +49,8 @@ colnames(mexp) <- c(colnames(mexp)[1:12], 'Viability', 'Concentration', 'Activit
 
 
 #---- Convert data and errors to percentages ----
-mexp$Viability <- mexp$Viability * 100
-mexp$STD <- mexp$STD * 100
+#mexp$Viability <- mexp$Viability * 100
+#mexp$STD <- mexp$STD * 100
 
 #---- CURVE FITTING  SETUP ----
 curvelength = 5000
@@ -140,7 +140,9 @@ w = 0.65
 fwid = 9
 fhei = 6
 theme_set(theme_bw())
-theme_update(plot.title = element_text(hjust = 0.5))
+theme_update(plot.title = element_text(hjust = 0.5), 
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank())
 
 
 #mexp <- subset(mexp, Targeted == TRUE)
@@ -155,8 +157,10 @@ ggplot(mexp, aes(x = Concentration,
   geom_point(aes(shape = Construct), size = 3) +
   geom_line(aes(y = Fit.Conc, linetype = Construct), data = fits) +
   facet_wrap(~ Cell.Line) +
-  scale_x_log10() +
-  labs(x = "Concentration (nM)", y = "% Viability")
+  scale_x_log10(limits =c(min(mexp$Concentration),max(mexp$concentration))) +
+  scale_y_continuous(breaks = seq(0,1,length.out=11), labels = scales::percent) +
+  labs(x = "Concentration (nM)", y = "Viability")
+
 
 
 ggplot(mexp, aes(x = Activity, 
@@ -164,8 +168,15 @@ ggplot(mexp, aes(x = Activity,
                   group = ExpNum, 
                   color = Cell.Line)) +
   geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
-  geom_point(aes(shape = Construct)) +
+  geom_point(aes(shape = Construct), size = 3) +
   geom_line(aes(y = Fit.Act, linetype = Construct), data = fits) +
   scale_x_log10() +
+  scale_y_continuous(breaks = seq(0,1,length.out=11), labels = scales::percent) +
   facet_wrap(~ Antibody) +
-  labs(x = "Activity (nCi)", y = "% Viability")
+  labs(x = "Activity (nCi)", y = "Viability") + 
+  
+    #change the variables above!
+  ggsave(filename = 'Rfigs/thisthang.png',
+         width = fwid, height = fhei, units = "in")
+                                                         
+
