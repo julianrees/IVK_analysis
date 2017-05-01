@@ -86,7 +86,7 @@ for(i in seq(nrow(experiments))){
   
   #---- Put the results in to table
   results[i,1] <- crr$fit$par[4]
-  results[i,2] <- summary(crr)$rseMat[1]
+  results[i,2] <- summary(arr)$coefficients[4,2]
   
   #---- Build the dose response for Activity ----
   arr <- drm(Viability~Activity, 
@@ -112,7 +112,7 @@ for(i in seq(nrow(experiments))){
   
   #---- Put the results in to table
   results[i,3] <- arr$fit$par[4]
-  results[i,4] <- summary(arr)$rseMat[1]
+  results[i,4] <- summary(arr)$coefficients[4,2]
   
   #---- Merge the concentration and activity fits ----
   addfits <- cbind(addfits, aaddfits[, -1])
@@ -169,3 +169,9 @@ ggplot(mexp, aes(x = Activity,
   scale_x_log10() +
   facet_wrap(~ Antibody) +
   labs(x = "Activity (nCi)", y = "% Viability")
+
+
+ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) + 
+  geom_col() +
+  geom_errorbar(aes(ymin = Concentration.EC50-Concentration.RSE, 
+                    ymax = Concentration.EC50+Concentration.RSE))
