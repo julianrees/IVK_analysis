@@ -156,7 +156,7 @@ ggplot(mexp, aes(x = Concentration,
   geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
   geom_point(aes(shape = Construct), size = 3) +
   geom_line(aes(y = Fit.Conc, linetype = Construct), data = fits) +
-  facet_wrap(~ Cell.Line) +
+  facet_wrap(~ ExpNum) +
   scale_x_log10(limits =c(min(mexp$Concentration),max(mexp$concentration))) +
   scale_y_continuous(breaks = seq(0,1,length.out=11), labels = scales::percent) +
   labs(x = "Concentration (nM)", y = "Viability")
@@ -179,8 +179,8 @@ ggplot(mexp, aes(x = Activity,
        width = fwid, height = fhei, units = "in")
 
 
-ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) +
-  geom_col() +
+ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50, color = Antibody)) +
+  geom_col(aes(fill = Antibody)) +
   geom_errorbar(aes(ymin = Concentration.EC50-Concentration.RSE,
                     ymax = Concentration.EC50+Concentration.RSE))
 
@@ -188,4 +188,4 @@ ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) +
 
 
 
->>>>>>> dbc3eea7d9935a254ecc22a08413b66c9c13cb66
+
