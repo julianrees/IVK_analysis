@@ -143,14 +143,18 @@ theme_set(theme_bw())
 theme_update(plot.title = element_text(hjust = 0.5))
 
 
+#mexp <- subset(mexp, Targeted == TRUE)
+#fits <- subset(fits, Targeted == TRUE)
+
+
 ggplot(mexp, aes(x = Concentration, 
                   y = Viability, 
                   group = ExpNum, 
-                  color = Cell.Line)) +
+                  color = Antibody)) +
   geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
-  geom_point(aes(shape = Construct)) +
+  geom_point(aes(shape = Construct), size = 3) +
   geom_line(aes(y = Fit.Conc, linetype = Construct), data = fits) +
-  facet_wrap(~ Antibody) +
+  facet_wrap(~ Cell.Line) +
   scale_x_log10() +
   labs(x = "Concentration (nM)", y = "% Viability")
 
