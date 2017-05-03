@@ -95,9 +95,9 @@ for(i in seq(nrow(experiments))){
   })
 
   #---- Put the results in to table
-  results[i,1] <- crr$fit$par[4]
-  results[i,2] <- lccr$fit$par[4]
-  results[i,3] <- hccr$fit$par[4]
+  results[i,1] <- crr$fit$par[4]*1000
+  results[i,2] <- lccr$fit$par[4]*1000
+  results[i,3] <- hccr$fit$par[4]*1000
 
   #---- Build the dose response for Activity ----
   arr <- drm(Viability~Activity,
@@ -127,9 +127,9 @@ for(i in seq(nrow(experiments))){
   })
 
   #---- Put the results in to table
-  results[i,4] <- arr$fit$par[4]
-  results[i,5] <- larr$fit$par[4]
-  results[i,6] <- harr$fit$par[4]
+  results[i,4] <- arr$fit$par[4]*1000
+  results[i,5] <- larr$fit$par[4]*1000
+  results[i,6] <- harr$fit$par[4]*1000
   
   #---- Merge the concentration and activity fits ----
   addfits <- cbind(addfits, aaddfits[, -1])
@@ -198,13 +198,9 @@ ggplot(mexp, aes(x = Activity,
 
 
 ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) +
-  geom_col(aes(fill = Antibody)) +
+  geom_col(aes(fill = Antibody, color = Antibody, alpha = Cell.Line)) +
   geom_errorbar(aes(ymin = Concentration.LowEC50Limit,
                     ymax = Concentration.HighEC50Limit)) +
-  scale_y_continuous()
-
-
-
-
-
+  scale_y_log10() +
+  labs(x = "Experiment Number", y = expression(paste("IC"[50], " (pM)")))
 
