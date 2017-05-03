@@ -61,14 +61,23 @@ aparams <- matrix(nrow = nrow(experiments), ncol = 4)
 results <- data.frame(nrow = nrow(experiments), ncol = 4)
 drfun <- function(x, b, c, d, e) c + (d - c) / (1 + exp(b*(log(x) - log(e))))
 
-
+i = 1
 for(i in seq(nrow(experiments))){
   #---- Build the dose response for Concentration ----
   crr <- drm(Viability~Concentration,
             data = mexp[ which(mexp$ExpNum == i), ],
             fct = LL.4())
   cparams[i, ] <- c(crr$fit$par[1], crr$fit$par[2], crr$fit$par[3], crr$fit$par[4])
-
+  
+  #---- Make and fit the low and high error curves
+  low <- mexp[ which(mexp$ExpNum == i), ]
+  high <- mexp[ which(mexp$ExpNum == i), ]
+  low$Viability <- low$Viability - low$STD
+  high$Viability <- high$Viability + low$STD
+  
+  lccr <- drm(Viability~Concentration, data = low, fct = LL.4())
+  hccr <- drm(Viability~Concentration, data = high, fct = LL.4())
+  
   #---- Make the abscissa vector using curvelength ----
   vals <- with(mexp, seq(min(mexp$Concentration[ which(mexp$ExpNum == i)]),
                           max(mexp$Concentration[ which(mexp$ExpNum == i)]),
@@ -87,13 +96,19 @@ for(i in seq(nrow(experiments))){
 
   #---- Put the results in to table
   results[i,1] <- crr$fit$par[4]
-  results[i,2] <- summary(arr)$coefficients[4,2]
+  results[i,2] <- lccr$fit$par[4]
+  results[i,3] <- hccr$fit$par[4]
 
   #---- Build the dose response for Activity ----
   arr <- drm(Viability~Activity,
              data = mexp[ which(mexp$ExpNum == i), ],
              fct = LL.4())
 
+  #---- Make and fit the low and high error curves
+  larr <- drm(Viability~Activity, data = low, fct = LL.4())
+  harr <- drm(Viability~Activity, data = high, fct = LL.4())
+  
+  
   #---- Make the abscissa vector using curvelength ----
   aparams[i, ] <- c(arr$fit$par[1], arr$fit$par[2], arr$fit$par[3], arr$fit$par[4])
   avals <- with(mexp, seq(min(mexp$Activity[ which(mexp$ExpNum == i)]),
@@ -112,9 +127,10 @@ for(i in seq(nrow(experiments))){
   })
 
   #---- Put the results in to table
-  results[i,3] <- arr$fit$par[4]
-  results[i,4] <- summary(arr)$coefficients[4,2]
-
+  results[i,4] <- arr$fit$par[4]
+  results[i,5] <- larr$fit$par[4]
+  results[i,6] <- harr$fit$par[4]
+  
   #---- Merge the concentration and activity fits ----
   addfits <- cbind(addfits, aaddfits[, -1])
 
@@ -132,7 +148,8 @@ mfitvars <- melt(fitvars, id = colnames(experiments)[1:idCols])
 fits <- cbind(fits[with(fits, order(ExpNum)), ], mfitvars[with(mfitvars, order(ExpNum)), 2:idCols])
 
 #---- Add results into the experiment table
-colnames(results) <- c('Concentration.EC50', 'Concentration.RSE', 'Activity.EC50', 'Activity.RSE')
+colnames(results) <- c('Concentration.EC50', 'Concentration.LowEC50Limit','Concentration.HighEC50Limit', 
+                       'Activity.EC50', 'Activity.LowEC50Limit', 'Activity.HighEC50Limit')
 experiments <- cbind(experiments, results)
 
 
@@ -180,10 +197,11 @@ ggplot(mexp, aes(x = Activity,
        width = fwid, height = fhei, units = "in")
 
 
-ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50, color = Antibody)) +
+ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) +
   geom_col(aes(fill = Antibody)) +
-  geom_errorbar(aes(ymin = Concentration.EC50-Concentration.RSE,
-                    ymax = Concentration.EC50+Concentration.RSE))
+  geom_errorbar(aes(ymin = Concentration.LowEC50Limit,
+                    ymax = Concentration.HighEC50Limit)) +
+  scale_y_continuous()
 
 
 
