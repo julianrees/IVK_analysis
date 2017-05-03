@@ -55,7 +55,8 @@ colnames(mexp) <- c(colnames(mexp)[1:12], 'Viability', 'Concentration', 'Activit
 
 #---- CURVE FITTING  SETUP ----
 curvelength = 5000
-fits <- data.frame(ExpNum = 1, Concentration = 1, Activity = 1, Fit.Conc = 1, Fit.Act = 1)
+fits <- data.frame(ExpNum = 1, Concentration = 1, Activity = 1, Fit.Conc = 1, Fit.Act = 1,
+                   Fit.Conc.Low = 1, Fit.Conc.High = 1, Fit.Act.Low = 1, Fit.Act.High = 1)
 cparams <- matrix(nrow = nrow(experiments), ncol = 4)
 aparams <- matrix(nrow = nrow(experiments), ncol = 4)
 results <- data.frame(nrow = nrow(experiments), ncol = 4)
@@ -90,10 +91,19 @@ for(i in seq(nrow(experiments))){
       Fit.Conc = drfun(vals, cparams[i, 1],
                 cparams[i, 2],
                 cparams[i, 3],
-                cparams[i, 4])
+                cparams[i, 4]),
+      Fit.Conc.Low = drfun(vals, lccr$fit$par[1],
+                           lccr$fit$par[2],
+                           lccr$fit$par[3],
+                           lccr$fit$par[4]), 
+      Fit.Conc.High = drfun(vals, hccr$fit$par[1],
+                            hccr$fit$par[2],
+                            hccr$fit$par[3],
+                            hccr$fit$par[4])
+      
     )
   })
-
+  
   #---- Put the results in to table
   results[i,1] <- crr$fit$par[4]*1000
   results[i,2] <- lccr$fit$par[4]*1000
@@ -103,14 +113,15 @@ for(i in seq(nrow(experiments))){
   arr <- drm(Viability~Activity,
              data = mexp[ which(mexp$ExpNum == i), ],
              fct = LL.4())
-
+  
+  aparams[i, ] <- c(arr$fit$par[1], arr$fit$par[2], arr$fit$par[3], arr$fit$par[4])
+  
   #---- Make and fit the low and high error curves
   larr <- drm(Viability~Activity, data = low, fct = LL.4())
   harr <- drm(Viability~Activity, data = high, fct = LL.4())
   
   
   #---- Make the abscissa vector using curvelength ----
-  aparams[i, ] <- c(arr$fit$par[1], arr$fit$par[2], arr$fit$par[3], arr$fit$par[4])
   avals <- with(mexp, seq(min(mexp$Activity[ which(mexp$ExpNum == i)]),
                           max(mexp$Activity[ which(mexp$ExpNum == i)]),
                           length = curvelength))
@@ -122,7 +133,15 @@ for(i in seq(nrow(experiments))){
       Fit.Act = drfun(avals, aparams[i, 1],
                        aparams[i, 2],
                        aparams[i, 3],
-                       aparams[i, 4])
+                       aparams[i, 4]), 
+      Fit.Act.Low = drfun(avals, larr$fit$par[1],
+                           larr$fit$par[2],
+                           larr$fit$par[3],
+                           larr$fit$par[4]), 
+      Fit.Act.High = drfun(avals, harr$fit$par[1],
+                            harr$fit$par[2],
+                            harr$fit$par[3],
+                            harr$fit$par[4])
     )
   })
 
@@ -136,6 +155,7 @@ for(i in seq(nrow(experiments))){
 
   #---- Add each ExpNum to the end of fits
   fits <- rbind(fits, addfits)
+
 }
 
 #---- Clean up the fits, add the categorical variables back in ----
@@ -168,32 +188,31 @@ theme_update(plot.title = element_text(hjust = 0.5),
 
 
 ggplot(mexp, aes(x = Concentration,
-                  y = Viability,
-                  group = ExpNum,
-                  color = Antibody)) +
+                  group = ExpNum)) +
   geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
-  geom_point(aes(shape = Construct), size = 3) +
-  geom_line(aes(y = Fit.Conc, linetype = Construct), data = fits) +
-  facet_wrap(~ ExpNum) +
+  geom_point(aes(y = Viability, shape = Construct, color = Cell.Line), size = 3) +
+  geom_line(aes(y = Fit.Conc, linetype = Construct, color = Cell.Line), data = fits) +
+  geom_ribbon(aes(ymin = Fit.Conc.Low, ymax = Fit.Conc.High), data = fits, alpha=0.2) +
+  facet_wrap(~ Antibody) +
   scale_x_log10(limits =c(min(mexp$Concentration),max(mexp$concentration))) +
   scale_y_continuous(breaks = seq(0,1,length.out=11), labels = scales::percent) +
-  labs(x = "Concentration (nM)", y = "Viability")
+  labs(x = "Concentration (nM)", y = "Viability") + 
+  ggsave(filename = 'Rfigs/conc_fits_with_CI.png',
+         width = fwid, height = fhei, units = "in")
 
 
 
 ggplot(mexp, aes(x = Activity,
-                  y = Viability,
-                  group = ExpNum,
-                  color = Cell.Line)) +
+                  group = ExpNum)) +
   geom_errorbar(aes(ymin=Viability-STD, ymax=Viability+STD), width=.1) +
-  geom_point(aes(shape = Construct), size = 3) +
-  geom_line(aes(y = Fit.Act, linetype = Construct), data = fits) +
+  geom_point(aes(y = Viability, shape = Construct, color = Cell.Line), size = 3) +
+  geom_line(aes(y = Fit.Act, linetype = Construct, color = Cell.Line), data = fits) +
+  geom_ribbon(aes(ymin = Fit.Act.Low, ymax = Fit.Act.High), data = fits, alpha=0.2) +
   scale_x_log10() +
   scale_y_continuous(breaks = seq(0,1,length.out=11), labels = scales::percent) +
   facet_wrap(~ Antibody) +
-  labs(x = "Activity (nCi)", y = "% Viability")
-  #change the variables above!
-  ggsave(filename = 'Rfigs/thisthang.png',
+  labs(x = "Activity (nCi)", y = "% Viability") +
+  ggsave(filename = 'Rfigs/act_fits_with_CI.png',
        width = fwid, height = fhei, units = "in")
 
 
@@ -202,5 +221,18 @@ ggplot(experiments, aes(x = ExpNum, y = Concentration.EC50)) +
   geom_errorbar(aes(ymin = Concentration.LowEC50Limit,
                     ymax = Concentration.HighEC50Limit)) +
   scale_y_log10() +
-  labs(x = "Experiment Number", y = expression(paste("IC"[50], " (pM)")))
+  labs(x = "Experiment Number", y = expression(paste("IC"[50], " (pM)"))) + 
+  ggsave(filename = 'Rfigs/conc_IC50_comparison.png',
+         width = fwid, height = fhei, units = "in")
+
+
+ggplot(experiments, aes(x = ExpNum, y = Activity.EC50)) +
+  geom_col(aes(fill = Antibody, color = Antibody, alpha = Cell.Line)) +
+  geom_errorbar(aes(ymin = Activity.LowEC50Limit,
+                    ymax = Activity.HighEC50Limit)) +
+  scale_y_log10() +
+  labs(x = "Experiment Number", y = expression(paste("IC"[50], " (pCi)"))) + 
+  ggsave(filename = 'Rfigs/act_IC50_comparison.png',
+         width = fwid, height = fhei, units = "in")
+
 
